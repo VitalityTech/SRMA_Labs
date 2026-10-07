@@ -44,7 +44,8 @@
    - Rendered visual diagram file saved in `model/er-diagram.png`.
 2. **Conceptual Model Constraints**:
    - Model business entities and domain relationships only, not physical database tables.
-   - No associative entities for many-to-many relationships without own attributes. Many-to-many must be modeled as a direct relation between entities.
+   - STRICTLY no associative entities for many-to-many relationships without own attributes. Many-to-many must be modeled as a direct relation between entities.
+   - Associative entities are permitted only if the relationship itself carries domain-specific attributes.
    - Associative entities are permitted only if the relationship itself carries domain-specific attributes.
 3. **Normalization (3NF):**
    - No non-key attribute depends on another non-key attribute.

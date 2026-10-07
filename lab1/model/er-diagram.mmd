@@ -1,10 +1,7 @@
 erDiagram
     Manager ||--o{ Deal : manages
     Client ||--o{ Deal : has
-
-    %% Помилка: замість прямого зв'язку M:N створено сполучну таблицю
-    Deal ||--o{ DealProduct : includes
-    Product ||--o{ DealProduct : included_in
+    Deal ||--o{ Product : includes
 
     Manager {
         UUIDv7 manager_id PK
@@ -13,7 +10,7 @@ erDiagram
         timestamp created_at
     }
     Client {
-        int client_id PK
+        UUIDv7 client_id PK
         string company_name
         string contact_email UK
         timestamp created_at
@@ -23,7 +20,7 @@ erDiagram
         UUIDv7 client_id FK
         UUIDv7 manager_id FK
         string title
-        float deal_amount
+        float amount
         string status
         timestamp created_at
     }
@@ -32,8 +29,4 @@ erDiagram
         string name UK
         float price
         string description
-    }
-    DealProduct {
-        UUIDv7 deal_id FK
-        UUIDv7 product_id FK
     }
