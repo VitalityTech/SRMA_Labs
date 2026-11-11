@@ -1,8 +1,7 @@
 erDiagram
     Manager ||--o{ Deal : manages
     Client ||--o{ Deal : has
-    Deal ||--o{ DealProduct : contains
-    DealProduct }o--|| Product : references
+    Deal }o--|{ Product : includes
 
     Manager {
         UUIDv7 manager_id PK
@@ -24,10 +23,6 @@ erDiagram
         float deal_amount
         string status
         timestamp created_at
-    }
-    DealProduct {
-        UUIDv7 deal_id FK
-        UUIDv7 product_id FK
     }
     Product {
         UUIDv7 product_id PK
