@@ -1,0 +1,60 @@
+# Промпт 2 — Генерація Mermaid Use Case діаграми
+
+**Задача для AI:** Згенерувати синтаксично коректний код Mermaid для Use Case діаграми на основі переліку прецедентів, зв'язків `include`/`extend` та узагальнення акторів.
+
+**Промпт:**
+
+> Згенеруй Mermaid діаграму прецедентів (graph LR) для B2B CRM.
+> Актори: Manager, Client, Administrator (узагальнює Manager).
+> Прецеденти: Authenticate, Manage Clients, Create Deal, Select Client, Select Products, Apply Discount, Manage Products, View Deal History, Manage Users, Generate Report.
+> Включи зв'язки:
+> - Create Deal <<include>> Authenticate, Select Client, Select Products.
+> - Create Deal <<extend>> Apply Discount.
+> - Manage-прецеденти <<include>> Authenticate.
+> - Administrator узагальнює Manager.
+> Виведи лише валідний код Mermaid.
+
+**Відповідь AI:**
+
+```mermaid
+graph LR
+    subgraph Actors
+        M((Manager))
+        C((Client))
+        A((Administrator))
+    end
+
+    subgraph "CRM System"
+        UC1([Authenticate])
+        UC2([Manage Clients])
+        UC3([Create Deal])
+        UC4([Select Client])
+        UC5([Select Products])
+        UC6([Apply Discount])
+        UC7([Manage Products])
+        UC8([View Deal History])
+        UC9([Manage Users])
+        UC10([Generate Report])
+    end
+
+    M --> UC2
+    M --> UC3
+    M --> UC7
+    M --> UC8
+    M --> UC10
+    C --> UC8
+    A --> UC9
+    A --> UC10
+
+    UC2 -.->|include| UC1
+    UC3 -.->|include| UC1
+    UC3 -.->|include| UC4
+    UC3 -.->|include| UC5
+    UC3 -.->|extend| UC6
+    UC7 -.->|include| UC1
+    UC8 -.->|include| UC1
+    UC9 -.->|include| UC1
+    UC10 -.->|include| UC1
+
+    A -.->|generalizes| M
+```
