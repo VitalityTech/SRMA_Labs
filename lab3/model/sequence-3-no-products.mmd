@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor Manager
+    participant DC as DealController
+    participant DS as DealService
+    participant CR as ClientRepository
+    participant DB as Database
+
+    Manager->>DC: submitDeal(clientId, productIds, amount)
+    activate DC
+    DC->>DS: createDeal(request)
+    activate DS
+    DS->>CR: findById(clientId)
+    activate CR
+    CR->>DB: SELECT client WHERE id = clientId
+    activate DB
+    DB-->>CR: client
+    deactivate DB
+    CR-->>DS: client
+    deactivate CR
+    alt products provided
+        DS->>DS: validateProducts(productIds)
+    else no products
+        DS-->>DC: ValidationError "at least one product required"
+    end
+    DC-->>Manager: 400 Bad Request
+    deactivate DS
+    deactivate DC

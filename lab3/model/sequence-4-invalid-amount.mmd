@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor Manager
+    participant DC as DealController
+    participant DS as DealService
+    participant CR as ClientRepository
+    participant DB as Database
+
+    Manager->>DC: submitDeal(clientId, productIds, amount)
+    activate DC
+    DC->>DS: createDeal(request)
+    activate DS
+    DS->>CR: findById(clientId)
+    activate CR
+    CR->>DB: SELECT client WHERE id = clientId
+    activate DB
+    DB-->>CR: client
+    deactivate DB
+    CR-->>DS: client
+    deactivate CR
+    alt amount > 0
+        DS->>DS: proceedToCreate(client, products, amount)
+    else amount <= 0
+        DS-->>DC: ValidationError "invalid amount"
+    end
+    DC-->>Manager: 400 Bad Request
+    deactivate DS
+    deactivate DC

@@ -1,0 +1,27 @@
+sequenceDiagram
+    actor Manager
+    participant DC as DealController
+    participant DS as DealService
+    participant CR as ClientRepository
+    participant DB as Database
+
+    Manager->>DC: submitDeal(clientId, productIds, amount)
+    activate DC
+    DC->>DS: createDeal(request)
+    activate DS
+    DS->>CR: findById(clientId)
+    activate CR
+    CR->>DB: SELECT client WHERE id = clientId
+    activate DB
+    DB-->>CR: null
+    deactivate DB
+    CR-->>DS: null
+    deactivate CR
+    alt client exists
+        DS->>DS: continue processing
+    else client not found
+        DS-->>DC: ClientNotFoundError
+    end
+    DC-->>Manager: 404 Client not found
+    deactivate DS
+    deactivate DC
