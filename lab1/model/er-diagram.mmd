@@ -1,0 +1,32 @@
+erDiagram
+    Manager ||--o{ Deal : manages
+    Client ||--o{ Deal : has
+    Deal }o--|{ Product : includes
+
+    Manager {
+        string manager_id
+        string email
+        string full_name
+        timestamp created_at
+    }
+    Client {
+        string client_id
+        string company_name
+        string contact_email
+        timestamp created_at
+    }
+    Deal {
+        string deal_id
+        string client_id
+        string manager_id
+        string title
+        float amount
+        string status
+        timestamp created_at
+    }
+    Product {
+        string product_id
+        string name
+        float price
+        string description
+    }
