@@ -4,29 +4,29 @@ erDiagram
     Deal }o--|{ Product : includes
 
     Manager {
-        UUIDv7 manager_id PK
-        string email UK
+        string manager_id
+        string email
         string full_name
         timestamp created_at
     }
     Client {
-        UUIDv7 client_id PK
+        string client_id
         string company_name
-        string contact_email UK
+        string contact_email
         timestamp created_at
     }
     Deal {
-        UUIDv7 deal_id PK
-        UUIDv7 client_id FK
-        UUIDv7 manager_id FK
+        string deal_id
+        string client_id
+        string manager_id
         string title
         float amount
         string status
         timestamp created_at
     }
     Product {
-        UUIDv7 product_id PK
-        string name UK
+        string product_id
+        string name
         float price
         string description
     }
