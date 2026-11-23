@@ -1,0 +1,150 @@
+@startuml
+skinparam componentStyle uml2
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+title UML Component Diagram - B2B CRM Architecture (Lab 5)
+
+actor "Manager" as Manager
+actor "Client" as Client
+actor "Administrator" as Admin
+
+package "CRM System Boundary" {
+
+    package "1. Presentation Layer (Web SPA)" {
+        [DealManagementUI] as DealUI
+        [ClientManagementUI] as ClientUI
+        [ProductCatalogUI] as ProductUI
+        [AuthUI] as AuthUI
+    }
+
+    package "2. API / Backend Layer (Controllers)" {
+        [DealController] as DC
+        [ClientController] as CC
+        [ProductController] as PC
+        [AuthController] as AC
+
+        () "IDealAPI" as IDealAPI
+        () "IClientAPI" as IClientAPI
+        () "IProductAPI" as IProductAPI
+        () "IAuthAPI" as IAuthAPI
+
+        IDealAPI - DC
+        IClientAPI - CC
+        IProductAPI - PC
+        IAuthAPI - AC
+    }
+
+    package "3. Service Layer (Core Business Logic)" {
+        [DealService] as DS
+        [ClientService] as CS
+        [ProductService] as PS
+        [AuthService] as AS
+        [NotificationService] as NS
+        [PricingEngine] as PE
+        [AuditLogService] as ALS
+
+        () "IDealService" as IDealService
+        () "IClientService" as IClientService
+        () "IProductService" as IProductService
+        () "IAuthService" as IAuthService
+        () "INotificationService" as INotificationService
+        () "IPricingEngine" as IPricingEngine
+        () "IAuditLog" as IAuditLog
+
+        IDealService - DS
+        IClientService - CS
+        IProductService - PS
+        IAuthService - AS
+        INotificationService - NS
+        IPricingEngine - PE
+        IAuditLog - ALS
+    }
+
+    package "4. Data Access Layer (Repositories)" {
+        [DealRepository] as DealRepo
+        [ClientRepository] as ClientRepo
+        [ProductRepository] as ProductRepo
+        [ManagerRepository] as ManagerRepo
+
+        () "IDealRepository" as IDealRepo
+        () "IClientRepository" as IClientRepo
+        () "IProductRepository" as IProductRepo
+        () "IManagerRepository" as IManagerRepo
+
+        IDealRepo - DealRepo
+        IClientRepo - ClientRepo
+        IProductRepo - ProductRepo
+        IManagerRepo - ManagerRepo
+    }
+
+    package "5. Database Layer" {
+        database "PostgreSQL RDBMS (3NF)" as DB {
+            [Deals Table]
+            [Clients Table]
+            [Products Table]
+            [Managers Table]
+            [DealProducts Table]
+            [AuditLog Table]
+        }
+        () "ISqlDatabase" as ISql
+        ISql - DB
+    }
+}
+
+package "External Integrations (Outside Boundary)" {
+    cloud "Identity Provider (Keycloak/Auth0)" as IdP
+    cloud "Notification Gateway (Twilio/SendGrid)" as NotifGateway
+    cloud "Payment Gateway (Stripe/LiqPay)" as PayGateway
+    cloud "External ERP / Inventory API" as ErpApi
+
+    () "IOAuthIdentityApi" as IOAuth
+    () "IMessageGatewayApi" as IMessage
+    () "IPaymentApi" as IPay
+    () "IErpInventoryApi" as IErp
+
+    IOAuth - IdP
+    IMessage - NotifGateway
+    IPay - PayGateway
+    IErp - ErpApi
+}
+
+Manager ..> DealUI : manages deals
+Manager ..> ProductUI : selects products
+Client ..> ClientUI : confirms terms
+Admin ..> AuthUI : manages roles
+
+DealUI ..( IDealAPI : HTTPS / JSON
+ClientUI ..( IClientAPI : HTTPS / JSON
+ProductUI ..( IProductAPI : HTTPS / JSON
+AuthUI ..( IAuthAPI : HTTPS / JSON
+
+DC ..( IDealService : use
+DC ..( IAuthService : verify token
+CC ..( IClientService : use
+PC ..( IProductService : use
+AC ..( IAuthService : authenticate
+
+DS ..( IClientService : validate client
+DS ..( IProductService : validate products
+DS ..( IPricingEngine : apply discount
+DS ..( INotificationService : notify client
+DS ..( IAuditLog : record attempt
+DS ..( IDealRepo : persist deal
+
+CS ..( IClientRepo : use
+PS ..( IProductRepo : use
+AS ..( IManagerRepo : use
+
+AS ..( IOAuth : OIDC / OAuth2
+NS ..( IMessage : REST / SMS / Email
+PS ..( IErp : check stock
+DS ..( IPay : process invoice
+
+DealRepo ..( ISql : SQL / ACID
+ClientRepo ..( ISql : SQL / ACID
+ProductRepo ..( ISql : SQL / ACID
+ManagerRepo ..( ISql : SQL / ACID
+ALS ..( ISql : SQL / ACID
+
+@enduml

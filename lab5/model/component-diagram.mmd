@@ -7,17 +7,17 @@ classDef repoStyle fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#311b92;
 classDef dbStyle fill:#eceff1,stroke:#455a64,stroke-width:2px,color:#263238;
 classDef extStyle fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#b71c1c;
 
-subgraph Actors ["Користувачі (External Actors)"]
+subgraph Actors ["Користувачі системи (External Actors)"]
     direction LR
     Manager["Менеджер (Manager)"]:::actorStyle
     Client["Клієнт (Client)"]:::actorStyle
     Admin["Адміністратор (Admin)"]:::actorStyle
 end
 
-subgraph CRM_Boundary ["CRM System Boundary (Межа системи)"]
+subgraph CRM_Boundary ["CRM System Boundary (Внутрішня межа системи)"]
     direction TB
 
-    subgraph UI_Layer ["1. Presentation Layer (Web SPA)"]
+    subgraph UI_Layer ["1. Presentation Layer (Web Client SPA)"]
         direction LR
         DealUI["DealManagementUI"]:::uiStyle
         ClientUI["ClientManagementUI"]:::uiStyle
@@ -33,7 +33,7 @@ subgraph CRM_Boundary ["CRM System Boundary (Межа системи)"]
         AC["AuthController"]:::apiStyle
     end
 
-    subgraph Service_Layer ["3. Service Layer (Business Logic)"]
+    subgraph Service_Layer ["3. Service Layer (Core Business Logic)"]
         direction TB
         DS["DealService"]:::serviceStyle
         CS["ClientService"]:::serviceStyle
@@ -41,7 +41,7 @@ subgraph CRM_Boundary ["CRM System Boundary (Межа системи)"]
         AS["AuthService"]:::serviceStyle
         NS["NotificationService"]:::serviceStyle
         PE["PricingEngine"]:::serviceStyle
-        NotifGW["Notification Gateway<br/>(Twilio / SendGrid)"]:::serviceStyle
+        ALS["AuditLogService"]:::serviceStyle
     end
 
     subgraph DAL_Layer ["4. Data Access Layer (Repositories)"]
@@ -53,15 +53,16 @@ subgraph CRM_Boundary ["CRM System Boundary (Межа системи)"]
     end
 
     subgraph DB_Layer ["5. Database Layer (PostgreSQL - 3NF)"]
-        DB[("PostgreSQL Database<br/>deals, clients, products, managers")]:::dbStyle
+        DB[("PostgreSQL Database<br/>deals, clients, products, managers, audit_log")]:::dbStyle
     end
 end
 
-subgraph Ext_Boundary ["Зовнішні інтеграції (External Integrations)"]
+subgraph Ext_Boundary ["Зовнішні інтеграції (External Integrations / 3rd-Party SaaS)"]
     direction LR
-    IdP["Identity Provider<br/>(OAuth2 / OIDC)"]:::extStyle
+    IdP["Identity Provider<br/>(Keycloak / Auth0)"]:::extStyle
+    NotifGW["Notification Gateway<br/>(Twilio / SendGrid)"]:::extStyle
     PayGW["Payment Gateway<br/>(Stripe / LiqPay)"]:::extStyle
-    ErpAPI["External ERP / Inventory API"]:::extStyle
+    ErpAPI["External ERP / Inventory API<br/>(Warehouse Stock)"]:::extStyle
 end
 
 Manager --> DealUI
@@ -75,7 +76,6 @@ ProductUI -->|"IProductAPI"| PC
 AuthUI -->|"IAuthAPI"| AC
 
 DC -->|"IDealService"| DS
-DC -->|"IDealRepository"| DRepo
 DC -->|"IAuthService"| AS
 CC -->|"IClientService"| CS
 PC -->|"IProductService"| PS
@@ -85,18 +85,20 @@ DS -->|"IClientService"| CS
 DS -->|"IProductService"| PS
 DS -->|"IPricingEngine"| PE
 DS -->|"INotificationService"| NS
+DS -->|"IAuditLog"| ALS
 DS -->|"IDealRepository"| DRepo
 
 CS -->|"IClientRepository"| CRepo
 PS -->|"IProductRepository"| PRepo
 AS -->|"IManagerRepository"| MRepo
-NS -->|"IMessageGatewayApi"| NotifGW
 
 DRepo -->|"ISqlDatabase"| DB
 CRepo -->|"ISqlDatabase"| DB
 PRepo -->|"ISqlDatabase"| DB
 MRepo -->|"ISqlDatabase"| DB
+ALS -->|"ISqlDatabase"| DB
 
-AS -.->|"IOAuthIdentityApi"| IdP
-DS -.->|"IPaymentApi"| PayGW
-PS -.->|"IErpInventoryApi"| ErpAPI
+AS -.->|"IOAuthIdentityApi (OIDC)"| IdP
+NS -.->|"IMessageGatewayApi (SMS/Email)"| NotifGW
+DS -.->|"IPaymentApi (Webhooks)"| PayGW
+PS -.->|"IErpInventoryApi (REST)"| ErpAPI
