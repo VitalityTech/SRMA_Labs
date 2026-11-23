@@ -1,0 +1,42 @@
+sequenceDiagram
+    actor Manager
+    participant DC as DealController
+    participant DS as DealService
+    participant CR as ClientRepository
+    participant PR as ProductRepository
+    participant DB as Database
+
+    Manager->>DC: submitDeal(clientId, productIds, amount, discount)
+    activate DC
+    DC->>DS: createDeal(request)
+    activate DS
+    DS->>CR: findById(clientId)
+    activate CR
+    CR->>DB: SELECT client WHERE id = clientId
+    activate DB
+    DB-->>CR: client
+    deactivate DB
+    CR-->>DS: client
+    deactivate CR
+    DS->>PR: findByIds(productIds)
+    activate PR
+    PR->>DB: SELECT products WHERE id IN (...)
+    activate DB
+    DB-->>PR: products
+    deactivate DB
+    PR-->>DS: products
+    deactivate PR
+    loop validate each product
+        DS->>DS: validateProduct(product)
+    end
+    opt discount provided
+        DS->>DS: applyDiscount(amount, discount)
+    end
+    DS->>DB: INSERT deal (clientId, managerId, amount, status)
+    activate DB
+    DB-->>DS: dealId
+    deactivate DB
+    DS-->>DC: dealId
+    deactivate DS
+    DC-->>Manager: 201 Created {dealId}
+    deactivate DC

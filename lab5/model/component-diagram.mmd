@@ -1,0 +1,104 @@
+flowchart TB
+classDef actorStyle fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b;
+classDef uiStyle fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+classDef apiStyle fill:#e8f5e9,stroke:#388e3c,stroke-width:2px,color:#1b5e20;
+classDef serviceStyle fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100;
+classDef repoStyle fill:#ede7f6,stroke:#512da8,stroke-width:2px,color:#311b92;
+classDef dbStyle fill:#eceff1,stroke:#455a64,stroke-width:2px,color:#263238;
+classDef extStyle fill:#ffebee,stroke:#d32f2f,stroke-width:2px,color:#b71c1c;
+
+subgraph Actors ["Користувачі системи (External Actors)"]
+    direction LR
+    Manager["Менеджер (Manager)"]:::actorStyle
+    Client["Клієнт (Client)"]:::actorStyle
+    Admin["Адміністратор (Admin)"]:::actorStyle
+end
+
+subgraph CRM_Boundary ["CRM System Boundary (Внутрішня межа системи)"]
+    direction TB
+
+    subgraph UI_Layer ["1. Presentation Layer (Web Client SPA)"]
+        direction LR
+        DealUI["DealManagementUI"]:::uiStyle
+        ClientUI["ClientManagementUI"]:::uiStyle
+        ProductUI["ProductCatalogUI"]:::uiStyle
+        AuthUI["AuthUI"]:::uiStyle
+    end
+
+    subgraph API_Layer ["2. API / Backend Layer (Controllers)"]
+        direction LR
+        DC["DealController"]:::apiStyle
+        CC["ClientController"]:::apiStyle
+        PC["ProductController"]:::apiStyle
+        AC["AuthController"]:::apiStyle
+    end
+
+    subgraph Service_Layer ["3. Service Layer (Core Business Logic)"]
+        direction TB
+        DS["DealService"]:::serviceStyle
+        CS["ClientService"]:::serviceStyle
+        PS["ProductService"]:::serviceStyle
+        AS["AuthService"]:::serviceStyle
+        NS["NotificationService"]:::serviceStyle
+        PE["PricingEngine"]:::serviceStyle
+        ALS["AuditLogService"]:::serviceStyle
+    end
+
+    subgraph DAL_Layer ["4. Data Access Layer (Repositories)"]
+        direction LR
+        DRepo["DealRepository"]:::repoStyle
+        CRepo["ClientRepository"]:::repoStyle
+        PRepo["ProductRepository"]:::repoStyle
+        MRepo["ManagerRepository"]:::repoStyle
+    end
+
+    subgraph DB_Layer ["5. Database Layer (PostgreSQL - 3NF)"]
+        DB[("PostgreSQL Database<br/>deals, clients, products, managers, audit_log")]:::dbStyle
+    end
+end
+
+subgraph Ext_Boundary ["Зовнішні інтеграції (External Integrations / 3rd-Party SaaS)"]
+    direction LR
+    IdP["Identity Provider<br/>(Keycloak / Auth0)"]:::extStyle
+    NotifGW["Notification Gateway<br/>(Twilio / SendGrid)"]:::extStyle
+    PayGW["Payment Gateway<br/>(Stripe / LiqPay)"]:::extStyle
+    ErpAPI["External ERP / Inventory API<br/>(Warehouse Stock)"]:::extStyle
+end
+
+Manager --> DealUI
+Manager --> ProductUI
+Client --> ClientUI
+Admin --> AuthUI
+
+DealUI -->|"IDealAPI"| DC
+ClientUI -->|"IClientAPI"| CC
+ProductUI -->|"IProductAPI"| PC
+AuthUI -->|"IAuthAPI"| AC
+
+DC -->|"IDealService"| DS
+DC -->|"IAuthService"| AS
+CC -->|"IClientService"| CS
+PC -->|"IProductService"| PS
+AC -->|"IAuthService"| AS
+
+DS -->|"IClientService"| CS
+DS -->|"IProductService"| PS
+DS -->|"IPricingEngine"| PE
+DS -->|"INotificationService"| NS
+DS -->|"IAuditLog"| ALS
+DS -->|"IDealRepository"| DRepo
+
+CS -->|"IClientRepository"| CRepo
+PS -->|"IProductRepository"| PRepo
+AS -->|"IManagerRepository"| MRepo
+
+DRepo -->|"ISqlDatabase"| DB
+CRepo -->|"ISqlDatabase"| DB
+PRepo -->|"ISqlDatabase"| DB
+MRepo -->|"ISqlDatabase"| DB
+ALS -->|"ISqlDatabase"| DB
+
+AS -.->|"IOAuthIdentityApi (OIDC)"| IdP
+NS -.->|"IMessageGatewayApi (SMS/Email)"| NotifGW
+DS -.->|"IPaymentApi (Webhooks)"| PayGW
+PS -.->|"IErpInventoryApi (REST)"| ErpAPI
