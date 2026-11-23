@@ -43,6 +43,7 @@
 - `AuthService` — перевірка автентифікації та ролей (`isAuthenticated` із S5 у Lab 3).
 - `NotificationService` — формування та відправка повідомлення клієнту для підтвердження умов угоди (крок 6 із Lab 4).
 - `PricingEngine` — розрахунок суми угоди та застосування знижки (`applyDiscount` із UC-6 Lab 2 та `opt`-фрагмента S1 у Lab 3).
+- `AuditLogService` — фіксація кожної спроби створення угоди в журналі аудиту (`timestamp, actor_id, результат`) зі збереженням >= 90 днів (виконання NFR-07 із Lab 2).
 
 ### 3.4 Рівень доступу до даних (Data Access Layer)
 - `DealRepository` — збереження та читання сутності `Deal` і зв'язків із товарами.
@@ -65,7 +66,8 @@
 | `ClientController` | `IClientAPI` | `IClientService` | `ClientService` | Запити по клієнтах |
 | `ProductController` | `IProductAPI` | `IProductService` | `ProductService` | Запити по товарах |
 | `AuthController` | `IAuthAPI` | `IAuthService` | `AuthService` | Логін та перевірка сесії |
-| `DealService` | `IDealService` | `IClientService`, `IProductService`, `IPricingEngine`, `INotificationService`, `IDealRepository`, `IPaymentApi` | Відповідні сервіси, репозиторій та Payment Gateway | Повний цикл валідації, збереження та сповіщення по угоді |
+| `DealService` | `IDealService` | `IClientService`, `IProductService`, `IPricingEngine`, `INotificationService`, `IAuditLog`, `IDealRepository`, `IPaymentApi` | Відповідні сервіси, репозиторій та Payment Gateway | Повний цикл валідації, аудиту, збереження та сповіщення по угоді |
+| `AuditLogService` | `IAuditLog` | `ISqlDatabase` | `PostgreSQL Database` | Запис подій створення угод у таблицю `audit_log` (NFR-07) |
 | `ClientService` | `IClientService` | `IClientRepository` | `ClientRepository` | Перевірка існування клієнта |
 | `ProductService` | `IProductService` | `IProductRepository`, `IErpInventoryApi` | `ProductRepository`, `External ERP API` | Перевірка товарів у БД та залишків у ERP |
 | `AuthService` | `IAuthService` | `IManagerRepository`, `IOAuthIdentityApi` | `ManagerRepository`, `Identity Provider` | Перевірка користувача та OAuth2/OIDC токена |
@@ -89,6 +91,7 @@
 | `ProductService` / `ProductRepository` | `Product` | UC-5, UC-7, FR-03, S3 | `ProductRepository` (`findByIds`) | Крок 3: гілка перевірки товарів |
 | `PricingEngine` | `Deal.amount`, `Product.price` | UC-6 Apply Discount | `opt discount` (`applyDiscount`) | Крок 5: перевірка й розрахунок суми |
 | `NotificationService` | `Client.contact_email` | — | — | Крок 6: повідомлення клієнту |
+| `AuditLogService` | `Manager.manager_id`, `Deal.deal_id` | NFR-07 (журнал аудиту >= 90 днів) | Фіксація результату S1–S5 | Запис результату завершення процесу |
 | `DealRepository` | `Deal`, зв'язок `Deal–Product` | FR-01, FR-07, NFR-06 | `INSERT deal` | Крок 7: збереження угоди (`new` / `draft`) |
 | `PostgreSQL Database` | Усі 4 сутності (3NF) | NFR-06 | `Database` | Збереження стану угоди |
 
@@ -99,3 +102,4 @@
 3. Визначено Provided та Required інтерфейси між компонентами.
 4. Кожен компонент трасується до попередніх моделей (Lab 1–4).
 5. Сувора ізоляція рівнів: контролери рівня API взаємодіють виключно з інтерфейсами сервісного шару (`IDealService`, `IClientService`, `IProductService`, `IAuthService`) і не мають прямих залежностей від репозиторіїв (`IDealRepository` тощо).6. Чітка межа системи (`CRM System Boundary`): усі зовнішні провайдери (`Identity Provider`, `Notification Gateway`, `Payment Gateway`, `External ERP API`) розміщуються строго за межами контуру CRM у блоці зовнішніх інтеграцій і підключаються лише через Required-інтерфейси відповідних сервісів.
+7. Покриття NFR-07 із Lab 2: у сервісному шарі обов'язково присутній компонент `AuditLogService`, який надає інтерфейс `IAuditLog` для `DealService` і зберігає записи аудиту в `PostgreSQL Database`.
