@@ -1,0 +1,93 @@
+flowchart TD
+classDef startEnd fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#155724;
+classDef failEnd fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#721c24;
+classDef action fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1;
+classDef decision fill:#fff3cd,stroke:#ffc107,stroke-width:2px,color:#856404;
+classDef sync fill:#e0e0e0,stroke:#616161,stroke-width:3px,color:#212121;
+classDef message fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+
+subgraph ManagerLane ["Роль: Менеджер"]
+    StartNode([Початок]):::startEnd
+    SubmitDeal["Подати заявку на створення угоди<br/>(клієнт, товари, сума)"]:::action
+    RedirectLogin["Перенаправлення на сторінку входу<br/>(302 Redirect /login)"]:::failEnd
+    ShowClientError["Отримати помилку:<br/>Клієнта не знайдено"]:::failEnd
+    ShowProductsError["Отримати помилку:<br/>Товари не обрано"]:::failEnd
+    ShowAmountError["Отримати помилку:<br/>Некоректна сума"]:::failEnd
+    ManagerSuccess["Отримати підтвердження:<br/>Угода створена (201 Created)"]:::startEnd
+    ManagerReject["Отримати сповіщення:<br/>Клієнт відхилив угоду"]:::failEnd
+    ManagerTimeout["Отримати сповіщення:<br/>Таймаут, збережено як чернетку"]:::action
+    EndFail([Кінець: Відмова]):::failEnd
+    EndSuccess([Кінець: Угода створена]):::startEnd
+    EndReject([Кінець: Відхилено]):::failEnd
+    EndDraft([Кінець: Чернетка]):::startEnd
+end
+
+subgraph SystemLane ["Роль: Система (CRM)"]
+    AuthCond{"Менеджер автентифікований?"}:::decision
+    ForkSync{{"=== Fork: Паралельна перевірка ==="}}:::sync
+    CheckClient["Перевірити існування клієнта<br/>(ClientRepository.findById)"]:::action
+    CheckProducts["Перевірити наявність товарів<br/>(ProductRepository.findByIds)"]:::action
+    ClientCond{"Клієнт існує?"}:::decision
+    ProductsCond{"Товари є?"}:::decision
+    JoinSync{{"=== Join: Синхронізація перевірок ==="}}:::sync
+    CheckAmount{"Сума > 0?"}:::decision
+    SendMessage["Надіслати повідомлення клієнту:<br/>Підтвердьте умови угоди"]:::message
+    HandleResponse{"Обробка відповіді / таймауту"}:::decision
+    CreateDealRecord["Створити угоду зі статусом 'new'<br/>(INSERT deal)"]:::action
+    SetRejectedStatus["Встановити статус 'rejected'"]:::action
+    SetDraftStatus["Зберегти як 'draft'<br/>(продовження без очікування)"]:::action
+end
+
+subgraph ClientLane ["Роль: Клієнт"]
+    ReceiveInvite["Отримати повідомлення:<br/>Підтвердьте умови угоди"]:::message
+    ClientDecision{"Рішення клієнта"}:::decision
+    SendAccept["Надіслати відповідь:<br/>Підтверджено"]:::message
+    SendDecline["Надіслати відповідь:<br/>Відхилено"]:::message
+    TimeoutEvent["Немає відповіді<br/>(таймаут 3 дні)"]:::action
+end
+
+StartNode --> SubmitDeal
+SubmitDeal --> AuthCond
+AuthCond -- "Ні" --> RedirectLogin
+RedirectLogin --> EndFail
+AuthCond -- "Так" --> ForkSync
+
+ForkSync --> CheckClient
+ForkSync --> CheckProducts
+
+CheckClient --> ClientCond
+ClientCond -- "Ні" --> ShowClientError
+ShowClientError --> EndFail
+ClientCond -- "Так" --> JoinSync
+
+CheckProducts --> ProductsCond
+ProductsCond -- "Ні" --> ShowProductsError
+ShowProductsError --> EndFail
+ProductsCond -- "Так" --> JoinSync
+
+JoinSync --> CheckAmount
+CheckAmount -- "Ні (<= 0)" --> ShowAmountError
+ShowAmountError --> EndFail
+CheckAmount -- "Так (> 0)" --> SendMessage
+
+SendMessage -.->|"Повідомлення"| ReceiveInvite
+ReceiveInvite --> ClientDecision
+ClientDecision -- "Підтвердити" --> SendAccept
+ClientDecision -- "Відхилити" --> SendDecline
+ClientDecision -- "Мовчання 3 дні" --> TimeoutEvent
+
+SendAccept -.->|"Відповідь: Так"| HandleResponse
+SendDecline -.->|"Відповідь: Ні"| HandleResponse
+TimeoutEvent -.->|"Подія таймауту"| HandleResponse
+
+HandleResponse -- "Підтверджено" --> CreateDealRecord
+CreateDealRecord --> ManagerSuccess
+ManagerSuccess --> EndSuccess
+
+HandleResponse -- "Відхилено" --> SetRejectedStatus
+SetRejectedStatus --> ManagerReject
+ManagerReject --> EndReject
+
+HandleResponse -- "Таймаут 3 дні" --> SetDraftStatus
+SetDraftStatus --> ManagerTimeout
+ManagerTimeout --> EndDraft

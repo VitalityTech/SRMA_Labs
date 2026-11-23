@@ -1,0 +1,17 @@
+sequenceDiagram
+    actor User
+    participant DC as DealController
+    participant AS as AuthService
+
+    User->>DC: submitDeal(clientId, productIds, amount)
+    activate DC
+    DC->>AS: isAuthenticated(session)
+    activate AS
+    AS-->>DC: false
+    deactivate AS
+    alt authenticated
+        DC->>DC: delegate to DealService
+    else not authenticated
+        DC-->>User: 302 Redirect /login
+    end
+    deactivate DC
