@@ -5,20 +5,18 @@ erDiagram
 
     Manager {
         string manager_id
-        string email
+        string email UK
         string full_name
         timestamp created_at
     }
     Client {
         string client_id
         string company_name
-        string contact_email
+        string contact_email UK
         timestamp created_at
     }
     Deal {
         string deal_id
-        string client_id
-        string manager_id
         string title
         float amount
         string status
@@ -26,7 +24,7 @@ erDiagram
     }
     Product {
         string product_id
-        string name
+        string name UK
         float price
-        string description
+        string description "необов'язковий"
     }
