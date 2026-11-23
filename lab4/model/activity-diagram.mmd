@@ -1,0 +1,72 @@
+flowchart TD
+classDef startEnd fill:#d4edda,stroke:#28a745,stroke-width:2px,color:#155724;
+classDef failEnd fill:#f8d7da,stroke:#dc3545,stroke-width:2px,color:#721c24;
+classDef action fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1;
+classDef decision fill:#fff3cd,stroke:#ffc107,stroke-width:2px,color:#856404;
+classDef sync fill:#e0e0e0,stroke:#616161,stroke-width:3px,color:#212121;
+classDef message fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px,color:#4a148c;
+
+subgraph ManagerLane ["Роль: Менеджер"]
+    StartNode([Початок]):::startEnd
+    SubmitDeal["Подати заявку на створення угоди<br/>(клієнт, товари, сума)"]:::action
+    ShowDataError["Отримати помилку:<br/>Некоректні дані заявки"]:::failEnd
+    ShowAmountError["Отримати помилку:<br/>Некоректна сума"]:::failEnd
+    ManagerSuccess["Отримати підтвердження:<br/>Угода створена"]:::startEnd
+    ManagerReject["Отримати сповіщення:<br/>Клієнт відхилив угоду"]:::failEnd
+    EndFail([Кінець: Помилка]):::failEnd
+    EndSuccess([Кінець: Успіх]):::startEnd
+    EndReject([Кінець: Відхилено]):::failEnd
+end
+
+subgraph SystemLane ["Роль: Система (CRM)"]
+    ForkSync{{"=== Fork: Паралельна перевірка ==="}}:::sync
+    CheckClient["Перевірити існування клієнта"]:::action
+    CheckProducts["Перевірити наявність товарів"]:::action
+    JoinSync{{"=== Join: Злиття перевірок ==="}}:::sync
+    ValidData{"Дані валідні?"}:::decision
+    CheckAmount{"Сума > 0?"}:::decision
+    SendMessage["Надіслати повідомлення клієнту:<br/>Підтвердьте умови угоди"]:::message
+    HandleResponse{"Відповідь клієнта"}:::decision
+    CreateDealRecord["Створити угоду зі статусом 'new'"]:::action
+    SetRejectedStatus["Встановити статус 'rejected'"]:::action
+end
+
+subgraph ClientLane ["Роль: Клієнт"]
+    ReceiveInvite["Отримати повідомлення:<br/>Підтвердьте умови угоди"]:::message
+    ClientDecision{"Рішення клієнта"}:::decision
+    SendAccept["Надіслати: Підтверджено"]:::message
+    SendDecline["Надіслати: Відхилено"]:::message
+end
+
+StartNode --> SubmitDeal
+SubmitDeal --> ForkSync
+
+ForkSync --> CheckClient
+ForkSync --> CheckProducts
+CheckClient --> JoinSync
+CheckProducts --> JoinSync
+
+JoinSync --> ValidData
+ValidData -- "Ні" --> ShowDataError
+ShowDataError --> EndFail
+ValidData -- "Так" --> CheckAmount
+
+CheckAmount -- "Ні (<= 0)" --> ShowAmountError
+ShowAmountError --> EndFail
+CheckAmount -- "Так (> 0)" --> SendMessage
+
+SendMessage -.->|"Повідомлення"| ReceiveInvite
+ReceiveInvite --> ClientDecision
+ClientDecision -- "Підтвердити" --> SendAccept
+ClientDecision -- "Відхилити" --> SendDecline
+
+SendAccept -.->|"Відповідь"| HandleResponse
+SendDecline -.->|"Відповідь"| HandleResponse
+
+HandleResponse -- "Підтверджено" --> CreateDealRecord
+CreateDealRecord --> ManagerSuccess
+ManagerSuccess --> EndSuccess
+
+HandleResponse -- "Відхилено" --> SetRejectedStatus
+SetRejectedStatus --> ManagerReject
+ManagerReject --> EndReject
