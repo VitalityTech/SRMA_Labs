@@ -65,3 +65,19 @@ This repository is developed and maintained as part of the "Software Requirement
   - [Prompt 1 (Process Steps Review)](lab4/ai/prompt-1.md)
   - [Prompt 2 (Diagram Generation)](lab4/ai/prompt-2.md)
   - [Prompt 3 (Behavior Audit)](lab4/ai/prompt-3.md)
+
+### Lab 5: Architecture (Component Diagram)
+- Specification: [lab5/spec.md](lab5/spec.md)
+- Component Model:
+  - Mermaid Model: [lab5/model/component-diagram.mmd](lab5/model/component-diagram.mmd)
+  - PlantUML Model: [lab5/model/component-diagram.puml](lab5/model/component-diagram.puml)
+  - Render (PNG): [lab5/model/component-diagram.png](lab5/model/component-diagram.png)
+  - Render (SVG): [lab5/model/component-diagram.svg](lab5/model/component-diagram.svg)
+- Defense & Audit: [lab5/DEFENSE.md](lab5/DEFENSE.md)
+- ADRs:
+  - [ADR-0001: N-Tier Layered Architecture with Service Layer Isolation](lab5/adr/0001-layered-modular-architecture.md)
+  - [ADR-0002: System Boundary and External Integrations Isolation](lab5/adr/0002-external-integrations-boundary.md)
+- AI Prompts & Trace:
+  - [Prompt 1 (Architecture Spec Review)](lab5/ai/prompt-1.md)
+  - [Prompt 2 (Component Diagram Generation)](lab5/ai/prompt-2.md)
+  - [Prompt 3 (Architecture Audit & Discrepancies)](lab5/ai/prompt-3.md)
